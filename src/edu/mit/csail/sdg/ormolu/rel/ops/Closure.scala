@@ -25,7 +25,10 @@ case class Closure(relation: Relation) extends Relation {
   override def arity: Int = relation.arity
   override def toString: String = "^" + relation
 
-  override def query = {
+  override def query = relation.query
+  override def projection = relation.projection
+  override def filter = relation.filter
+  override def tables = relation.tables/*{
     val queryName = QueryName(relationName, columns)
     val selectList = SeqSelectSubList(TableStar(relation.relationTableRef) :: Nil)
 
@@ -37,6 +40,6 @@ case class Closure(relation: Relation) extends Relation {
 
     val withClause = WithRecursive((queryName, SqlUnion(relation.query, querySpec)) :: Nil)
     Query(ExplicitTable(TableRef(queryName.name)), Option(withClause))
-  }
+  }*/
 
 }

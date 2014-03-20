@@ -25,6 +25,6 @@ object joined {
   }
 
   case class JoinOn(left: TablePrim, right: TablePrim, boolExpr: BoolValueExpr) extends JoinedTable {
-    def toSql = "%s JOIN %s ON (%s)" format (left.toSql, right.toSql, boolExpr.toSql)
+    def toSql = "%s JOIN %s ON %s" format (left.toSql, right.toSql, boolExpr.toSql)
   }
 }

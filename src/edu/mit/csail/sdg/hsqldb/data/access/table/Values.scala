@@ -13,8 +13,8 @@ import edu.mit.csail.sdg.hsqldb.data.access.QueryExpr
 
 case class Values(valueList: Seq[Seq[ValueExpr]]) extends QueryExpr{
   def toSql = {
-    val valueListSql = for{values <- valueList} yield values.mkString("(", ", ", ")")
+    val valueListSql = for{values <- valueList} yield values.map(_.toSql).mkString("(", ", ", ")")
 
-    "VALUES " + valueListSql.mkString("(", ",", ")")
+    "VALUES " + valueListSql.mkString(", ")
   }
 }

@@ -6,9 +6,13 @@ import edu.mit.csail.sdg.hsqldb.data.access.query.spec.SeqSelectSubList
 import edu.mit.csail.sdg.hsqldb.data.access.table.expression.TableExpr
 import edu.mit.csail.sdg.hsqldb.data.access.table.primary.joined.JoinOn
 import edu.mit.csail.sdg.hsqldb.data.access.table.primary.joined.JoinedTable
-import edu.mit.csail.sdg.hsqldb.syntax.predicate.Comparison
-import edu.mit.csail.sdg.hsqldb.syntax.value.SimpleRowValueExpr
-import edu.mit.csail.sdg.ormolu.rel.Relation
+import edu.mit.csail.sdg.hsqldb.data.access.Subquery
+import edu.mit.csail.sdg.ormolu.rel.{Variable, Relation}
+import edu.mit.csail.sdg.hsqldb.syntax.value.ExplicitRowValueExpr._
+import edu.mit.csail.sdg.hsqldb.syntax.predicate.Comparison.Equals
+import edu.mit.csail.sdg.hsqldb.syntax.predicate.AllComparison._
+import edu.mit.csail.sdg.hsqldb.syntax.predicate.{AllComparison, Comparison}
+import edu.mit.csail.sdg.hsqldb.syntax.value.{And, ExplicitRowValueExpr, SimpleRowValueExpr}
 
 /**
  * The Join (.) of two relations. left.right of relations left and right is the relation you get by
@@ -24,27 +28,12 @@ case class Join(left: Relation, right: Relation) extends Relation {
   override def arity: Int = left.arity + right.arity - 2
   override def toString: String = left + "." + right
 
-  override def query: QuerySpec = {
-    val leftColumns = left.tableColumns
-    val rightColumns = right.tableColumns
+  override def query = querySpec
 
-    val selectList = SeqSelectSubList(
-      for ((column, asName) <- (leftColumns.init ++ rightColumns.tail) zip columns)
-        yield DerivedColumn(column, Option(asName)))
-
-    val tableJoin = JoinOn(left.tablePrim, right.tablePrim, Comparison(
-      SimpleRowValueExpr(leftColumns.last),
+  override def projection = left.projection.init ++ right.projection.tail
+  override def filter = left.filter ++ right.filter :+ Comparison(
+      SimpleRowValueExpr(left.projection.last),
       Comparison.Equals,
-      SimpleRowValueExpr(rightColumns.head)))
-
-    QuerySpec(selectList, TableExpr(tableJoin :: Nil))
-  }
-  override def tableColumns = for (DerivedColumn(valueExpr, _) <- query.selectList.subLists) yield valueExpr
-
-  override def tablePrim = if (query.tableExpr.from.length == 1)
-    query.tableExpr.from.head match {
-      case table: JoinedTable => table.enclose
-      case otherwise          => otherwise
-    }
-  else super.tablePrim
+      SimpleRowValueExpr(right.projection.head))
+  override def tables = left.tables ++ right.tables
 }

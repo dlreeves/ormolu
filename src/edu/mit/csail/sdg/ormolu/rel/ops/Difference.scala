@@ -1,7 +1,8 @@
 package edu.mit.csail.sdg.ormolu.rel.ops
 
-import edu.mit.csail.sdg.ormolu.rel.Relation
 import edu.mit.csail.sdg.hsqldb.data.access.query.setOps.Except
+import edu.mit.csail.sdg.ormolu.rel.{Relation}
+import edu.mit.csail.sdg.hsqldb.data.access.Subquery
 
 /**
  * The difference (-) of two relations. A tuple is in left - right when it is in left but not in right
@@ -13,4 +14,6 @@ case class Difference(left: Relation, right: Relation) extends Relation{
   override def arity: Int = left.arity
   override def toString: String = left + " - " + right
   override def query = Except(left.query, right.query)
+
+  override def tables = Vector(Subquery(query).as(relationName, columns))
 }

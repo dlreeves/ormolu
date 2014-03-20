@@ -1,6 +1,8 @@
 package edu.mit.csail.sdg.ormolu.rel.ops
-import edu.mit.csail.sdg.hsqldb.data.access.query.setOps.{ Union => SqlUnion }
-import edu.mit.csail.sdg.ormolu.rel.Relation
+import edu.mit.csail.sdg.ormolu.rel.{Relation}
+import edu.mit.csail.sdg.hsqldb.data.access.query.setOps.{Union => SqlUnion}
+import edu.mit.csail.sdg.hsqldb.data.access.Subquery
+
 /**
  * The union (+) of two relations. A tuple is in left + right when it is in left or in right (or both)
  */
@@ -12,4 +14,7 @@ case class Union(left: Relation, right: Relation) extends Relation {
   override def toString: String = left + " + " + right
 
   override def query = SqlUnion(left.query, right.query)
+
+  override def tables = Vector(Subquery(query).as(relationName, columns))
+
 }

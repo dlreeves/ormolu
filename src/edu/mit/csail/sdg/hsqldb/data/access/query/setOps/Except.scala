@@ -14,6 +14,11 @@ case class Except(left: QueryExpr, right: QueryExpr) extends QueryExpr{
   def toSql = "%s EXCEPT %s" format (left.toSql, right.toSql)
 }
 
+object Except {
+  def excepts(xs: QueryExpr*) = if (xs.size < 2) xs.head
+    else xs reduceLeft (Except(_, _))
+}
+
 case class ExceptAll(left: QueryExpr, right: QueryExpr) extends QueryExpr{
   def toSql = "%s EXCEPT ALL %s" format (left.toSql, right.toSql)
 }

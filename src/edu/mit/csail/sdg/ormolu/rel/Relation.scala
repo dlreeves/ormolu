@@ -2,48 +2,35 @@ package edu.mit.csail.sdg.ormolu.rel
 
 import edu.mit.csail.sdg.ormolu.Expression
 import edu.mit.csail.sdg.hsqldb.data.access.QueryExpr
-import edu.mit.csail.sdg.hsqldb.HsqlDbExpr
 import edu.mit.csail.sdg.hsqldb.syntax.reference.TableRef
-import edu.mit.csail.sdg.hsqldb.syntax.value.ValueExpr
 import edu.mit.csail.sdg.hsqldb.data.access.table.primary.TablePrim
 import edu.mit.csail.sdg.hsqldb.data.access.Subquery
 import edu.mit.csail.sdg.ormolu.rel.ops._
+import edu.mit.csail.sdg.hsqldb.HsqlDbExpr
+import edu.mit.csail.sdg.hsqldb.syntax.value.{BoolValueExpr, True, ValueExpr}
 
 /**
  * A Relation is a set of tuples of a given arity. A Relation contains columns that store Unary relations. The number of columns is
  * the same as the arity. Order of columns is important.
  */
-abstract class Relation extends Expression{
+abstract class Relation extends Expression with Denestable{
   require(arity > 0, "A Relation must have a positive arity")
 
   def arity: Int
 
-  lazy val relationName: String = Relation.nextRelationName
-  
-  def relationTableRef: TableRef = TableRef(relationName)
+  override def projection = for (column <- columns) yield relationTableRef :@ column
+  override def filter:Seq[BoolValueExpr] = Nil
+  override def tables: Seq[TablePrim] = Nil
 
-  def query: QueryExpr = Univ.query
+  final lazy val relationName: String = Relation.nextRelationName
   
-  def tableColumns: Seq[ValueExpr] = for (column <- columns) yield relationTableRef :@ column
-  
-  def tablePrim: TablePrim = Subquery(query) as relationName
+  final def relationTableRef: TableRef = TableRef(relationName)
+
+  def query: QueryExpr = querySpec
 
   def sqlExpr: HsqlDbExpr = query
   /** Returns all the columns of this relation */
-  final val columns: Seq[String] = for(i <- 1 to arity) yield "col"+i
-    
-  /** Returns the first column of this relation */
-  final def first: String = columns(0)
-  
-  /** Returns all but the first column of this relation */
-  final def butFirst: Seq[String] = columns.tail
-  
-  /** Returns the last column of this relation */
-  final def last: String = columns(arity - 1)
-  
-  /** Returns all but the last column of this relation */
-  final def butLast: Seq[String] = columns.init;
-
+  final def columns: Seq[String] = for(i <- 1 to arity) yield "col"+i
   
   final def -(r: Relation) = Difference(this, r)
   final def <:<(r: Relation) = Domain(this, r)

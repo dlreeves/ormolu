@@ -7,4 +7,5 @@ import edu.mit.csail.sdg.hsqldb.syntax.value
  */
 case object False extends Formula {
   override val boolExpr = value.False
+
 }

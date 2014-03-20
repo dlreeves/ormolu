@@ -1,14 +1,9 @@
 package edu.mit.csail.sdg.ormolu.rel.ops
 
-import edu.mit.csail.sdg.hsqldb.data.access.query.setOps.{ Union => SqlUnion }
-import edu.mit.csail.sdg.hsqldb.data.access.query.spec.QuerySpec
-import edu.mit.csail.sdg.hsqldb.data.access.query.spec.SeqSelectSubList
-import edu.mit.csail.sdg.hsqldb.data.access.query.spec.TableStar
-import edu.mit.csail.sdg.hsqldb.data.access.table.expression.TableExpr
-import edu.mit.csail.sdg.hsqldb.data.access.table.primary.joined.JoinOn
 import edu.mit.csail.sdg.hsqldb.syntax.predicate.Comparison
-import edu.mit.csail.sdg.hsqldb.syntax.value.SimpleRowValueExpr
-import edu.mit.csail.sdg.ormolu.rel.Relation
+import edu.mit.csail.sdg.ormolu.rel.{Relation}
+import edu.mit.csail.sdg.hsqldb.syntax.value.{SimpleRowValueExpr}
+
 
 /**
  * The Override (++) of two relations. left ++ right is like the union, except that the tuples of right can replace the tuples of left rather than
@@ -19,17 +14,23 @@ case class Override(left: Relation, right: Relation) extends Relation {
   require(left.arity == right.arity,
     "The left relation has arity %s, while the right relation has arity %s. Both relations are expected to be the same".format(left.arity, right.arity))
 
-  override def arity: Int = left.arity
+  override val arity: Int = left.arity
   override def toString: String = left + " ++ " + right
 
-  override def query = {
-    val selectList = SeqSelectSubList(TableStar(left.relationTableRef) :: Nil)
+  private lazy val rewrite = OverrideHelper(left, right) + right
+  override def query = rewrite.query
 
-    val tableJoin = JoinOn(left.tablePrim, right.tablePrim, Comparison(
-      SimpleRowValueExpr(left.tableColumns.head),
+  override val tables = rewrite.tables
+
+  private[Override] case class OverrideHelper(left:Relation, right:Relation) extends Relation {
+  override val arity = left.arity
+  override def query = querySpec
+  override def projection = left.projection
+  override def filter = left.filter ++ right.filter :+ Comparison(
+      SimpleRowValueExpr(left.projection.head),
       Comparison.NotEquals,
-      SimpleRowValueExpr(right.tableColumns.head)))
-
-    SqlUnion(QuerySpec(selectList, TableExpr(tableJoin :: Nil)), right.query)
-  }
+      SimpleRowValueExpr(right.projection.head))
+  override def tables = left.tables ++ right.tables
 }
+}
+

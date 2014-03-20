@@ -9,6 +9,7 @@ object Translator extends App{
 //  println(model.funcs.mkString("\n"))
 //  println(model.fields.mkString("\n"))
 //  println(model.sigs.mkString("\n"))
-  println(model.sigTables.mkString(";\n"))
+//  model.predicates foreach {x => println(x.definition)}
+  model.functions foreach {x => println(x.definition)}
   println("Done")
 }

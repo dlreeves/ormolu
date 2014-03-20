@@ -14,6 +14,11 @@ case class Intersect(left: QueryExpr, right: QueryExpr) extends QueryExpr{
   def toSql = "%s INTERSECT %s" format (left.toSql, right.toSql)
 }
 
+object Intersect {
+  def intersects(xs: QueryExpr*) = if (xs.size < 2) xs.head
+    else xs reduceLeft (Intersect(_, _))
+}
+
 case class IntersectAll(left: QueryExpr, right: QueryExpr) extends QueryExpr{
   def toSql = "%s INTERSECT ALL %s" format (left.toSql, right.toSql)
 }

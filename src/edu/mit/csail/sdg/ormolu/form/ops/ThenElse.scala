@@ -10,7 +10,7 @@ import edu.mit.csail.sdg.hsqldb.data.access.Subquery
 /**
  * A conditional SetExpr. cond => then else otherwise has value then when cond is true, else it has value otherwise
  */
-case class ThenElse(cond: Formula, then: Relation, otherwise: Relation) extends Relation {
+abstract class ThenElse(cond: Formula, then: Relation, otherwise: Relation) extends Relation {
   require(then.arity == otherwise.arity,
     "The then and else expressions must have the same arity")
 
@@ -24,6 +24,6 @@ case class ThenElse(cond: Formula, then: Relation, otherwise: Relation) extends 
   }
 }
 
-case class PartThenElse(cond: Formula, then: Relation) {
-  def otherwise(r: Relation) = ThenElse(cond, then, r)
-}
+//case class PartThenElse(cond: Formula, then: Relation) {
+//  def otherwise(r: Relation) = ThenElse(cond, then, r)
+//}

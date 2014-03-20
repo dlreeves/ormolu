@@ -1,7 +1,11 @@
 package edu.mit.csail.sdg.ormolu.rel.ops
 
 import edu.mit.csail.sdg.ormolu.form.Formula
-import edu.mit.csail.sdg.ormolu.rel.Relation
+import edu.mit.csail.sdg.ormolu.rel.{Variable, Relation}
+import edu.mit.csail.sdg.hsqldb.syntax.predicate.Comparison.Equals
+import edu.mit.csail.sdg.hsqldb.syntax.value.ExplicitRowValueExpr
+import edu.mit.csail.sdg.hsqldb.data.access.Subquery
+import edu.mit.csail.sdg.hsqldb.syntax.predicate.{In, AllComparison, Comparison}
 
 /**
  * The formula that checks if left is a subset (in) right. left in right is true when every tuple of left is also a tuple of right

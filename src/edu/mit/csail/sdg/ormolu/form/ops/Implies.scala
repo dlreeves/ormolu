@@ -9,13 +9,7 @@ import edu.mit.csail.sdg.ormolu.form.{ Formula, True, False }
 case class Implies(left: Formula, right: Formula) extends Formula {
   val cond: Formula = left
 
-  final def otherwise(f: Formula) = (left, right) match {
-    case (True, r) => r
-    case (l, True) => !left ==> f
-    case (False, _) => f
-    case (_, False) => !left and f
-    case otherwise => Else(this, f)
-  }
+  final def otherwise(f: Formula) = Else(this, f)
 
   override def toString: String = left + " => " + right
 

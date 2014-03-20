@@ -16,7 +16,7 @@ import edu.mit.csail.sdg.hsqldb.syntax.value.{NonParenValueExpr, BoolValueExpr}
  */
 
 object literal {
-  private[literal] sealed trait literal extends NonParenValueExpr
+  sealed trait literal extends NonParenValueExpr
 
   implicit def stringToLiteral(s: String) = CharacterLiteral(s)
   implicit def numericToLiteral(n: Int) = NumericLiteral(n)
@@ -24,6 +24,10 @@ object literal {
 
   case class CharacterLiteral(chars: String) extends literal {
     val toSql = "'" + chars.replace("'", "''") + "'"
+  }
+
+  case class FunctionLiteral(call: String) extends literal {
+    val toSql = call
   }
   case class NumericLiteral(num: Int) extends literal {
     val toSql = num.toString

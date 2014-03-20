@@ -8,6 +8,4 @@ package edu.mit.csail.sdg.monitor.observer
  * To change this template use File | Settings | File Templates.
  */
 
-case class FieldValue(value: Seq[SigReference]) {
-
-}
+case class FieldValue(value: Seq[SigReference])

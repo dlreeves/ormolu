@@ -1,14 +1,14 @@
 package edu.mit.csail.sdg.alloy4.translator
 
 import edu.mit.csail.sdg.alloy4compiler.ast.{VisitReturn, Sig, ExprLet, ExprVar, ExprCall, ExprList, ExprQt, ExprConstant, ExprUnary, ExprBinary}
-import edu.mit.csail.sdg.ormolu.Expression
 import edu.mit.csail.sdg.alloy4compiler.ast.Sig.Field
 import edu.mit.csail.sdg.alloy4.Env
 import edu.mit.csail.sdg.ormolu.form.{Formula, True, False}
 import scala.collection.JavaConversions._
 import edu.mit.csail.sdg.alloy4compiler.ast.ExprITE
 import edu.mit.csail.sdg.ormolu.rel._
-import scala.collection.mutable.{Map => MMap}
+import scala.collection.mutable.{HashSet, Map => MMap}
+import edu.mit.csail.sdg.ormolu.{Predicate, Expression}
 
 object AlloyToOrmolu extends VisitReturn[Option[Expression]] {
   private val env = new Env[ExprVar, Expression]
@@ -55,7 +55,8 @@ object AlloyToOrmolu extends VisitReturn[Option[Expression]] {
 
   def visit(x: ExprVar): Option[Expression] = {
     val ans = env get x
-    if (ans == null) visitThis(x.`type`.toExpr) else Some(ans)
+    if (ans == null) for (Relation(rel) <- visitThis(x.`type`.toExpr)) yield Variable(x.label, rel)
+    else Some(ans)
   }
 
   def visit(x: ExprCall): Option[Expression] = {
@@ -82,7 +83,7 @@ object AlloyToOrmolu extends VisitReturn[Option[Expression]] {
   def visit(x: ExprITE): Option[Expression] = for (c <- visitThis(x.cond); l <- visitThis(x.left); r <- visitThis(x.right))
   yield (c, l, r) match {
       case (Formula(cond), Formula(left), Formula(right)) => cond then left otherwise right
-      case (Formula(cond), Relation(left), Relation(right)) => cond then left otherwise right
+      //case (Formula(cond), Relation(left), Relation(right)) => cond then left otherwise right
       case otherwise => default(otherwise + " - " + x)
     }
 
@@ -120,24 +121,31 @@ object AlloyToOrmolu extends VisitReturn[Option[Expression]] {
     import ExprQt.Op._
     x.desugar match {
       case xx: ExprQt => {
-        val args = for (i <- 0 until xx.count; Relation(rel) <- visitThis(xx getBound i)) yield (xx.get(i).label, rel)
+        val args = for (i <- 0 until xx.count; Relation(rel) <- visitThis(xx getBound i)) yield Variable(xx.get(i).label, rel)
 
         if (args.size != xx.count) default
-        else xx.op match {
-          case ALL => for (Formula(sub) <- visitThis(xx.sub)) yield all(args: _*) {
-            sub
+        else {
+          //for(i <- 0 until xx.count) env.put(xx.get(i), args(i).relation)
+          val rel = xx.op match {
+            case ALL => for (Formula(sub) <- visitThis(xx.sub)) yield all(args: _*) {
+              sub
+            }
+            case NO => for (Formula(sub) <- visitThis(xx.sub)) yield no(args: _*) {
+              sub
+            }
+            case ONE => for (Formula(sub) <- visitThis(xx.sub)) yield one(args: _*) {
+              sub
+            }
+            case LONE => for (Formula(sub) <- visitThis(xx.sub)) yield lone(args: _*) {
+              sub
+            }
+            case COMPREHENSION => for (Formula(sub) <- visitThis(xx.sub)) yield {
+              Comprehension(sub, args:_*)
+            }
+            case otherwise => default
           }
-          case NO => for (Formula(sub) <- visitThis(xx.sub)) yield no(args: _*) {
-            sub
-          }
-          case ONE => for (Formula(sub) <- visitThis(xx.sub)) yield one(args: _*) {
-            sub
-          }
-          case LONE => for (Formula(sub) <- visitThis(xx.sub)) yield lone(args: _*) {
-            sub
-          }
-          case COMPREHENSION => for (Formula(sub) <- visitThis(xx.sub)) yield Comprehension(sub, args: _*)
-          case otherwise => default
+        // for(i <- 0 until xx.count) env.remove(xx.get(i))
+          rel
         }
       }
       case xx => visitThis(xx)
@@ -166,8 +174,8 @@ object AlloyToOrmolu extends VisitReturn[Option[Expression]] {
       case ONE => for (Relation(sub) <- visitThis(x.sub)) yield one(sub)
       case NO => for (Relation(sub) <- visitThis(x.sub)) yield no(sub)
       case TRANSPOSE => for (Relation(sub) <- visitThis(x.sub)) yield ~sub
-      case RCLOSURE => for (Relation(sub) <- visitThis(x.sub)) yield *(sub)
-      case CLOSURE => for (Relation(sub) <- visitThis(x.sub)) yield ^(sub)
+//      case RCLOSURE => for (Relation(sub) <- visitThis(x.sub)) yield *(sub)
+//      case CLOSURE => for (Relation(sub) <- visitThis(x.sub)) yield ^(sub)
       case mult@(EXACTLYOF | SOMEOF | LONEOF | ONEOF | SETOF) =>
         for (Relation(sub) <- visitThis(x.sub)) yield sub
       case NOOP => visitThis(x.sub)
